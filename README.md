@@ -1,0 +1,150 @@
+# SummarizeFromLinks
+
+URLリストから自動的にコンテンツを取得し、OpenAI APIを使用して日本語で要約するツールです。
+
+## 機能
+
+- URLリストからの一括コンテンツ取得
+- OpenAI GPT-5-miniを使用した高品質な日本語要約
+- 埋め込み形式URL（`[URL:embed:cite]`形式）のサポート
+- 結果の自動保存（テキストファイル）
+- 詳細なログ出力
+
+## 必要要件
+
+- Python 3.13以上
+- OpenAI APIキー
+- インターネット接続
+
+## インストール
+
+このプロジェクトは [uv](https://github.com/astral-sh/uv) を使用しています。
+
+1. リポジトリをクローン：
+```bash
+git clone <repository-url>
+cd SummarizeFromLinks
+```
+
+2. 依存関係のインストール：
+```bash
+uv sync
+```
+
+## セットアップ
+
+1. `.env`ファイルを作成：
+```bash
+cp .env.example .env
+```
+
+2. `.env`ファイルにOpenAI APIキーを設定：
+```
+OPENAI_API_KEY=your_actual_api_key_here
+```
+
+3. `urls.txt`ファイルを作成し、要約したいURLを1行に1つずつ記載：
+```
+https://example.com/article1
+https://example.com/article2
+[https://example.com/article3:embed:cite]
+```
+
+## 使い方
+
+### 基本的な実行方法
+
+```bash
+uv run main.py
+```
+
+### Windows環境での実行（推奨）
+
+Windows環境では、コンソールの文字エンコーディングの問題を回避するため、以下のいずれかの方法で実行してください：
+
+#### 方法1: 環境変数を設定（推奨）
+```cmd
+set PYTHONUTF8=1
+uv run main.py
+```
+
+#### 方法2: コンソールのコードページを変更
+```cmd
+chcp 65001
+uv run main.py
+```
+
+#### 方法3: PowerShellでの実行
+```powershell
+$env:PYTHONUTF8=1
+uv run main.py
+```
+
+## 出力ファイル
+
+- `summaries.txt` - 要約結果が保存されます
+- `summarizer.log` - 実行ログが保存されます
+
+## ファイル構成
+
+```
+.
+├── main.py              # メインスクリプト
+├── url_scraper.py       # URLスクレイピング機能
+├── summarizer.py        # OpenAI API要約機能
+├── urls.txt             # 入力URLリスト
+├── .env                 # 環境変数（APIキー等）
+├── .env.example         # 環境変数のテンプレート
+├── summaries.txt        # 要約結果（生成される）
+├── summarizer.log       # 実行ログ（生成される）
+├── pyproject.toml       # プロジェクト設定
+└── README.md            # このファイル
+```
+
+## 要約形式
+
+要約には以下の情報が含まれます：
+
+- **タイトル**：記事のタイトル
+- **著者情報**：著者名や公開日（利用可能な場合）
+- **要約**：主要なポイントを箇条書きで整理
+- **目的・方法・結果・結論**：論文やレポートの場合
+- **提案**：生成AIを活用して業務効率を高めたい担当者向けの次のアクションステップ
+
+## トラブルシューティング
+
+### UnicodeEncodeError が発生する
+
+**問題**：
+```
+UnicodeEncodeError: 'cp932' codec can't encode character '—' in position ...
+```
+
+**解決方法**：
+上記の「Windows環境での実行」セクションを参照し、`PYTHONUTF8=1`環境変数を設定してください。
+
+### OpenAI APIエラー
+
+**問題**：APIキー関連のエラー
+
+**解決方法**：
+1. `.env`ファイルが存在し、正しいAPIキーが設定されているか確認
+2. APIキーに課金設定がされているか確認
+3. APIの利用制限に達していないか確認
+
+### コンテンツの抽出に失敗する
+
+**問題**：特定のURLでコンテンツが取得できない
+
+**解決方法**：
+1. URLが正しいか確認
+2. Webサイトがアクセス制限をしていないか確認
+3. `summarizer.log`でエラー詳細を確認
+
+## ライセンス
+
+このプロジェクトのライセンスは未定です。
+
+## 貢献
+
+プルリクエストを歓迎します。大きな変更の場合は、まずissueを開いて変更内容を議論してください。
