@@ -18,12 +18,13 @@ class ContentSummarizer:
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model or config.SUMMARIZER_MODEL
     
-    def summarize(self, content: str, url: str = "", max_tokens: Optional[int] = None) -> Optional[str]:
+    def summarize(self, content: str, url: str = "", page_title: Optional[str] = None, max_tokens: Optional[int] = None) -> Optional[str]:
         """コンテンツを要約
 
         Args:
             content: 要約対象のコンテンツ
             url: コンテンツのURL（ログ用）
+            page_title: HTMLから取得したページタイトル。Noneの場合はLLMが推測
             max_tokens: 要約の最大トークン数。Noneの場合はconfig.SUMMARIZER_MAX_TOKENSを使用
 
         Returns:
@@ -38,7 +39,10 @@ class ContentSummarizer:
                 logger.warning(f"Content truncated to {config.CONTENT_MAX_LENGTH} chars for {url}")
 
             # プロンプトを作成
-            prompt = config.SUMMARIZER_USER_PROMPT_TEMPLATE.format(content=content)
+            prompt = config.SUMMARIZER_USER_PROMPT_TEMPLATE.format(
+                content=content,
+                page_title=page_title if page_title else "",
+            )
 
             # OpenAI APIを呼び出し
             response = self.client.chat.completions.create(

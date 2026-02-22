@@ -1,10 +1,13 @@
 import os
 import sys
 import logging
+import shutil
 from typing import List, Dict
+from datetime import datetime
 from dotenv import load_dotenv
 from url_scraper import URLScraper
 from summarizer import ContentSummarizer
+from article_filter import ArticleFilter
 import config
 
 
@@ -67,39 +70,57 @@ def read_urls_from_file(filename: str) -> List[str]:
         return []
 
 
-def process_url(url: str, scraper: URLScraper, summarizer: ContentSummarizer) -> Dict[str, str]:
+def process_url(url: str, scraper: URLScraper, summarizer: ContentSummarizer, article_filter: ArticleFilter) -> Dict[str, str]:
     """単一のURLを処理して要約を生成
 
     Args:
         url: 処理対象のURL
         scraper: URLScraperインスタンス
         summarizer: ContentSummarizerインスタンス
+        article_filter: ArticleFilterインスタンス
 
     Returns:
-        処理結果の辞書（url, summary, status）
+        処理結果の辞書（url, summary, status, score, reason, page_title）
     """
-    # コンテンツを抽出
-    content = scraper.extract_content(url)
+    # コンテンツとページタイトルを抽出
+    result = scraper.extract_content(url)
+    content = result["content"]
+    page_title = result["page_title"]
+
     if not content:
         return {
             'url': url,
             'summary': 'エラー: コンテンツの抽出に失敗',
-            'status': 'failed'
+            'status': 'failed',
+            'score': None,
+            'reason': None,
+            'page_title': page_title,
         }
 
+    # ペルソナとの関連度を判定
+    evaluation = article_filter.evaluate(content, url)
+    score = evaluation["score"] if evaluation else None
+    reason = evaluation.get("reason", "") if evaluation else None
+
     # 要約を生成
-    summary = summarizer.summarize(content, url)
+    summary = summarizer.summarize(content, url, page_title=page_title)
     if not summary:
         return {
             'url': url,
             'summary': 'エラー: 要約の生成に失敗',
-            'status': 'failed'
+            'status': 'failed',
+            'score': score,
+            'reason': reason,
+            'page_title': page_title,
         }
 
     return {
         'url': url,
         'summary': summary,
-        'status': 'success'
+        'status': 'success',
+        'score': score,
+        'reason': reason,
+        'page_title': page_title,
     }
 
 
@@ -117,6 +138,14 @@ def save_results(results: List[Dict[str, str]], output_file: str):
         for result in results:
             f.write(f"URL: {result['url']}\n")
             f.write(f"ステータス: {result['status']}\n")
+            score = result.get('score')
+            if score is not None:
+                stars = "★" * score + "☆" * (5 - score)
+                reason = result.get('reason') or ""
+                f.write(f"おすすめ度: {stars} ({score}/5)")
+                if reason:
+                    f.write(f" - {reason}")
+                f.write("\n")
             f.write(f"要約: {result['summary']}\n")
             f.write("-" * 50 + "\n\n")
 
@@ -144,8 +173,9 @@ def main():
 
     print(f"{len(urls)}個のURLを処理します...")
 
-    # スクレイパーと要約器を初期化
+    # スクレイパー・フィルター・要約器を初期化
     scraper = URLScraper()
+    article_filter = ArticleFilter(api_key)
     summarizer = ContentSummarizer(api_key)
 
     # 各URLを処理
@@ -153,7 +183,7 @@ def main():
     for i, url in enumerate(urls, 1):
         print(f"\n[{i}/{len(urls)}] 処理中: {url}")
 
-        result = process_url(url, scraper, summarizer)
+        result = process_url(url, scraper, summarizer, article_filter)
         results.append(result)
 
         # 処理結果を表示
@@ -165,9 +195,24 @@ def main():
         else:
             print(f"  ✗ {result['summary']}")
 
-    # 結果をファイルに保存
-    save_results(results, config.DEFAULT_OUTPUT_FILE)
-    print(f"\n処理完了！結果は {config.DEFAULT_OUTPUT_FILE} に保存されました。")
+    # 結果をファイルに保存（日付付きファイル名を生成）
+    date_str = datetime.now().strftime('%Y%m%d')
+    output_filename = f"{date_str}summaries.md"
+    save_results(results, output_filename)
+    print(f"\n処理完了！結果は {output_filename} に保存されました。")
+
+    # コピー先フォルダへコピー（上書き禁止）
+    if config.COPY_DEST_DIR:
+        dest_path = os.path.join(config.COPY_DEST_DIR, output_filename)
+        if os.path.exists(dest_path):
+            print(f"コピーをスキップ: {dest_path} は既に存在します。")
+        else:
+            try:
+                shutil.copy(output_filename, dest_path)
+                print(f"コピー先フォルダへコピーしました: {dest_path}")
+            except Exception as e:
+                logger.error(f"コピーに失敗しました: {e}")
+                print(f"コピーに失敗しました: {e}")
 
     # 統計情報を表示
     success_count = sum(1 for r in results if r['status'] == 'success')
