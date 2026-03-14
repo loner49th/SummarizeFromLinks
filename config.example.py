@@ -25,9 +25,17 @@ CONTENT_SELECTORS = [
 # 削除するHTMLタグ
 REMOVE_TAGS = ['script', 'style', 'nav', 'header', 'footer', 'aside']
 
-# 要約設定
+# 要約設定（OpenAI）
 SUMMARIZER_MODEL = "gpt-4o-mini"  # 使用するモデル
 SUMMARIZER_MAX_TOKENS = 300  # 最大トークン数
+
+# 要約設定（Claude）
+CLAUDE_SUMMARIZER_MODEL = "claude-sonnet-4-6"
+CLAUDE_FILTER_MODEL = "claude-haiku-4-5-20251001"
+
+# 要約設定（Gemini）
+GEMINI_SUMMARIZER_MODEL = "gemini-3.1-pro-preview"
+GEMINI_FILTER_MODEL = "gemini-3.1-flash-lite-preview"
 
 # 要約プロンプトテンプレート
 SUMMARIZER_SYSTEM_PROMPT = "あなたはサマリーアシスタントは、日本語で文書を的確に要約することに特化したAIです。"
@@ -120,6 +128,7 @@ FILTER_PERSONA_INTERESTS = [
 FILTER_SCORE_THRESHOLD = 3
 
 # フィルタリング用モデル（軽量モデルでコスト削減）
+# AI_PROVIDER=openai の場合に使用
 FILTER_MODEL = "gpt-4o-mini"
 
 # フィルタリング用システムプロンプト

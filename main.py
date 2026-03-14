@@ -158,12 +158,28 @@ def main():
 
     logger = logging.getLogger(__name__)
 
-    # 環境変数からAPIキーを取得
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        logger.error("OPENAI_API_KEY environment variable is not set")
-        print("エラー: OPENAI_API_KEYが設定されていません。.envファイルまたは環境変数を確認してください。")
-        return
+    # 使用するAIプロバイダーを決定（デフォルト: openai）
+    provider = os.getenv('AI_PROVIDER', 'openai').lower()
+    if provider == 'claude':
+        api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not api_key:
+            logger.error("ANTHROPIC_API_KEY environment variable is not set")
+            print("エラー: ANTHROPIC_API_KEYが設定されていません。.envファイルまたは環境変数を確認してください。")
+            return
+    elif provider == 'gemini':
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            logger.error("GEMINI_API_KEY environment variable is not set")
+            print("エラー: GEMINI_API_KEYが設定されていません。.envファイルまたは環境変数を確認してください。")
+            return
+    else:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable is not set")
+            print("エラー: OPENAI_API_KEYが設定されていません。.envファイルまたは環境変数を確認してください。")
+            return
+
+    print(f"AIプロバイダー: {provider}")
 
     # URLリストを読み込み
     urls = read_urls_from_file(config.DEFAULT_URL_FILE)
@@ -175,8 +191,8 @@ def main():
 
     # スクレイパー・フィルター・要約器を初期化
     scraper = URLScraper()
-    article_filter = ArticleFilter(api_key)
-    summarizer = ContentSummarizer(api_key)
+    article_filter = ArticleFilter(api_key, provider=provider)
+    summarizer = ContentSummarizer(api_key, provider=provider)
 
     # 各URLを処理
     results = []
