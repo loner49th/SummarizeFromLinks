@@ -1,21 +1,21 @@
 # SummarizeFromLinks
 
-URLリストからコンテンツを自動取得し、OpenAI APIを使用して日本語で要約するツールです。ペルソナの興味に基づく記事フィルタリング機能も備えています。
+URLリストからコンテンツを自動取得し、AI APIを使用して日本語で要約するツールです。ペルソナの興味に基づく記事フィルタリング機能と、PowerPointスライド生成機能も備えています。
 
 ## 機能
 
 - URLリストからの一括コンテンツ取得
-- OpenAI gpt-4o-miniを使用した構造化日本語要約
+- OpenAI / Claude / Gemini を使用した構造化日本語要約
+- ペルソナベースの記事フィルタリング（関連度スコアリング）
 - 埋め込み形式URL（`[URL:embed:cite]`形式）のサポート
 - YouTube動画の字幕取得対応
-- ペルソナベースの記事フィルタリング（関連度スコアリング）
 - 結果の自動保存（Markdownファイル）
 - 詳細なログ出力
 
 ## 必要要件
 
 - Python 3.13以上
-- OpenAI APIキー
+- 使用するプロバイダーのAPIキー（OpenAI / Anthropic / Google）
 - インターネット接続
 
 ## インストール
@@ -40,9 +40,14 @@ uv sync
 cp .env.example .env
 ```
 
-2. `.env`ファイルにOpenAI APIキーを設定：
+2. `.env`ファイルにAPIキーとプロバイダーを設定：
 ```
-OPENAI_API_KEY=your_actual_api_key_here
+# 使用するプロバイダーを指定（openai / claude / gemini）
+AI_PROVIDER=openai
+
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 3. `config.py`を作成：
@@ -73,7 +78,7 @@ https://example.com/article2
 uv run python main.py
 ```
 
-`urls.txt`のすべてのURLを要約し、`{YYYYMMDD}summaries.md`に保存します。
+`urls.txt`のすべてのURLを要約し、ペルソナとの関連度スコアとともに`{YYYYMMDD}summaries.md`に保存します。
 
 ### ペルソナフィルタリング付き要約
 
@@ -82,6 +87,21 @@ uv run python filter_main.py
 ```
 
 `filter_urls.txt`のURLを読み込み、ペルソナの興味との関連度を判定してから、スコア閾値以上の記事のみ要約します。結果は`{YYYYMMDD}filtered.md`に保存されます。
+
+### AIプロバイダーの切り替え
+
+環境変数 `AI_PROVIDER` でプロバイダーを指定します：
+
+```bash
+# OpenAI（デフォルト）
+AI_PROVIDER=openai uv run python main.py
+
+# Claude (Anthropic)
+AI_PROVIDER=claude uv run python main.py
+
+# Gemini (Google)
+AI_PROVIDER=gemini uv run python main.py
+```
 
 ### Windows環境での実行（推奨）
 
@@ -107,7 +127,7 @@ uv run python main.py
 
 ## 出力ファイル
 
-- `{YYYYMMDD}summaries.md` - 全件要約の結果
+- `{YYYYMMDD}summaries.md` - 全件要約の結果（関連度スコア付き）
 - `{YYYYMMDD}filtered.md` - フィルタリング済み要約の結果
 - `summarizer.log` - 実行ログ
 
@@ -118,8 +138,8 @@ uv run python main.py
 ├── main.py              # 全件要約のエントリポイント
 ├── filter_main.py       # フィルタリング付き要約のエントリポイント
 ├── url_scraper.py       # URLスクレイピング機能
-├── summarizer.py        # OpenAI API要約機能
-├── article_filter.py    # ペルソナベースフィルタリング機能
+├── summarizer.py        # AI API要約機能（OpenAI / Claude / Gemini対応）
+├── article_filter.py    # ペルソナベースフィルタリング機能（OpenAI / Claude / Gemini対応）
 ├── config.example.py    # 設定ファイルのサンプル
 ├── config.py            # 実際の設定ファイル（config.example.pyからコピーして作成）
 ├── urls.txt             # 全件要約用URLリスト
@@ -155,14 +175,15 @@ UnicodeEncodeError: 'cp932' codec can't encode character '—' in position ...
 **解決方法**：
 上記の「Windows環境での実行」セクションを参照し、`PYTHONUTF8=1`環境変数を設定してください。
 
-### OpenAI APIエラー
+### APIエラーが発生する
 
 **問題**：APIキー関連のエラー
 
 **解決方法**：
-1. `.env`ファイルが存在し、正しいAPIキーが設定されているか確認
-2. APIキーに課金設定がされているか確認
-3. APIの利用制限に達していないか確認
+1. `.env`ファイルが存在し、使用するプロバイダーのAPIキーが正しく設定されているか確認
+2. `AI_PROVIDER`の値が `openai` / `claude` / `gemini` のいずれかになっているか確認
+3. APIキーに課金設定がされているか確認
+4. APIの利用制限に達していないか確認
 
 ### コンテンツの抽出に失敗する
 
