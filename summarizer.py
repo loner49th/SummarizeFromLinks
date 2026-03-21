@@ -74,14 +74,12 @@ class ContentSummarizer:
                 )
                 summary = response.text.strip()
             else:
-                response = self.client.chat.completions.create(
+                response = self.client.responses.create(
                     model=self.model,
-                    messages=[
-                        {"role": "system", "content": config.SUMMARIZER_SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt}
-                    ],
+                    instructions=config.SUMMARIZER_SYSTEM_PROMPT,
+                    input=prompt,
                 )
-                summary = response.choices[0].message.content.strip()
+                summary = response.output_text.strip()
 
             logger.info(f"Successfully summarized content from {url}")
             return summary

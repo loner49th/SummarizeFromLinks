@@ -79,15 +79,13 @@ class ArticleFilter:
                 )
                 raw = response.text.strip()
             else:
-                response = self.client.chat.completions.create(
+                response = self.client.responses.create(
                     model=self.model,
-                    messages=[
-                        {"role": "system", "content": config.FILTER_SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt},
-                    ],
-                    response_format={"type": "json_object"},
+                    instructions=config.FILTER_SYSTEM_PROMPT,
+                    input=prompt,
+                    text={"format": {"type": "json_object"}},
                 )
-                raw = response.choices[0].message.content.strip()
+                raw = response.output_text.strip()
 
             result = json.loads(raw)
 
